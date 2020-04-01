@@ -1,0 +1,66 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "",
+    "version": "1.0.0",
+    "title": "PowerfulPal Neeo NearByMeApi",
+    "termsOfService": ""
+  },
+  "host": "localhost:4342",
+  "basePath": "",
+  "tags": [],
+  "schemes": ["http"],
+  "paths": {
+    "/api/nearbyme/GetCountries": {
+      "get": {
+        "tags": ["Country"],
+        "summary": "Show that all Country details",
+        "description": "",
+        "operationId": "",
+        "produces": ["application/json"],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/User"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid status value"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "User": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "integer"
+        },
+        "fullName": {
+          "type": "string"
+        },
+        "degrees": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "educationId": {
+                "type": "integer"
+              },
+              "degree": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "registeruser",
+  "version": "1.0.0",
+  "description": "registeruserapi",
+  "main": "index.js",
+  "scripts": {
+    "start": "node dist/server.js",
+    "dev": "nodemon src/server.ts",
+    "build": "tsc -p .",
+    "prod": "npm run build && npm run start"
+  },
+  "author": "Wajid",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.19.0",
+    "body-parser": "^1.18.3",
+    "class-transformer": "^0.2.0",
+    "class-validator": "^0.9.1",
+    "common-imports": "^1.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-validator": "^6.4.0",
+    "http-errors": "^1.7.3",
+    "mongoose": "^5.5.3",
+    "mssql": "^6.0.1",
+    "node-stringbuilder": "^2.2.4",
+    "request": "^2.88.0",
+    "save": "^2.4.0",
+    "string-builder": "^0.1.6",
+    "swagger-ui-express": "^4.1.2",
+    "ts-node": "^8.5.4",
+    "twilio": "^3.38.0",
+    "typescript": "^3.7.2",
+    "xml2js": "^0.4.23"
+  },
+  "devDependencies": {
+    "@types/body-parser": "^1.17.1",
+    "@types/cors": "^2.8.6",
+    "@types/express": "^4.17.2",
+    "@types/http-errors": "^1.6.2",
+    "@types/mongoose": "^5.5.31",
+    "nodemon": "^2.0.2"
+  }
+}
