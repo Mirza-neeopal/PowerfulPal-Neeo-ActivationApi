@@ -1,8 +1,12 @@
 export interface Client {
-   dVentId: any,
-   appVer: string,
-   dP: number,
-   appID: string,
-   dM: string,
-   osVer: number
+  AppVer: string,
+  OsVer: number,
+  DM: string,
+  DVentId: any,
+  AppID: string,
+  DTokenVoIP: string,
+  Pns: number,
+  DevicePlatform: number,
+  DeviceVenderID: number,
+  DeviceToken: number
  }
