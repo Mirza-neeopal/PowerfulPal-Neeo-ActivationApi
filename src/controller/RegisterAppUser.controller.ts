@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction, request } from 'express';
 import { Client } from 'models/Client.model';
+import { DeviceInfo } from 'models/DeviceInfo.model';
 const SQL = require('mssql');
 const SQL_CONFIGURATION = require('../configuration.json');
 const phoneUtil = require("google-libphonenumber").PhoneNumberUtil.getInstance();
@@ -18,11 +19,15 @@ export class RegisterAppUserController {
             // Params list
             const phoneNumber = request.body.ph;
             const client = request.body.client as Client;
+            const deviceInfo = request.body.DeviceInfo as DeviceInfo;
             const DVenID = client.DVentId;
             const AppVer = client.AppVer;
             const AppId = client.AppID;
             const DM = client.DM;
             const OsVer = client.OsVer;
+            const password = client.pass;
+            const email = client.email;
+            const username = client.name;
             if(phoneNumber ===  '' && client === null) {
                return response.status(400).send({ error: "Enter Full information is  required" });
             }
@@ -57,30 +62,63 @@ export class RegisterAppUserController {
                 if(!userExist) {
                     const unBlockDb = UnBlockUser.unblock(internationalPhNo);  
                     const createDirectory = UnBlockUser.createDirectory();
-                    const createUserXmpp = createUser();
+                    const createUserXmpp = createUser(username, password, email, internationalPhNo);
                     const generateDeviceKey = GenDeviceKey.generateDeviceKey(internationalPhNo, DVenID, AppId); 
-                    const registerUserVoip = regUserVoip();
+                    const registerUserVoip = regUserVoip(internationalPhNo, password);
                     if(unBlockDb != null && createUserXmpp && generateDeviceKey != null && registerUserVoip) {
-                      return response.status(200).send({ success: true });
+                      return response.status(200).send({
+                        status: 200,
+                        code: 1,
+                        message: "success",
+                        version: "1.0.0",
+                        data: { returnValue: result.recordset[0] }
+                      });
                     }else {
-                      return response.status(400).send({ error: false });
+                      return response.status(500).send({
+                        status: 500,
+                        code: -1,
+                        message: "fail",
+                        version: "1.0.0",
+                        error: "error",
+                        data: {}
+                      });
                     }
                 }else {
-                  const upDateDeviceInfo = upDateUserDeviceInfo.updateInfo(DVenID, AppId, AppVer);
+                  const upDateDeviceInfo = upDateUserDeviceInfo.updateInfo(DVenID, AppId, AppVer, deviceInfo);
                   const generateDeviceKey = GenDeviceKey.generateDeviceKey(internationalPhNo, DVenID, AppId); 
-                  const registerUserVoip = regUserVoip();
+                  const registerUserVoip = regUserVoip(internationalPhNo, password);
                   if(upDateDeviceInfo != null && generateDeviceKey != null && registerUserVoip) {
-                    return response.status(200).send({ success: true });
+                    return response.status(200).send({
+                      status: 200,
+                      code: 1,
+                      message: "success",
+                      version: "1.0.0",
+                      data: { returnValue: result.recordset[0] }
+                    });
 
                   }else {
-                    return response.status(400).send({ error: false });
+                    return response.status(500).send({
+                      status: 500,
+                      code: -1,
+                      message: "fail",
+                      version: "1.0.0",
+                      error: "error",
+                      data: {}
+                    });
                   }
                 }
             })
        
         }
         catch(error) {
-            response.status(500).send({error});
+          return response.status(500).send({
+            status: 500,
+            code: -1,
+            message: "fail",
+            version: "1.0.0",
+            error: error,
+            data: {}
+          });
     
     }
   }
@@ -92,13 +130,12 @@ export class RegisterAppUserController {
  * @return it will return message.
  */
 
-const voipApi = 'http://rtsip.neeopal.com/NeoWeb/register.php';
-let regUserVoip = async () =>  {
+let regUserVoip = async (mob: string, pass: string) =>  {
     try {
       const params = {
         mode: 'add',
-        mob: '123455677',
-        pass: '12345',
+        // mob: '123455677',
+        // pass: '12345',
 
       };
       const config = {
@@ -109,18 +146,17 @@ let regUserVoip = async () =>  {
             'value': '12345'
         }
       };
-      const res = await axios.post('http://rtsip.neeopal.com/NeoWeb/register.php', params, config);
+      const res = await axios.post('http://rtsip.neeopal.com/NeoWeb/register.php', params, config, mob, pass);
         console.log(res);
-        // if(res.data.result === 'Error') {
-        //   console.log(res.data.message,'I am in error');
-        //   return res.data.message;
-        // }else {
-        //   console.log(res.data.message, 'I am in success');
-        //   return res.data.message;
-        // }
        }catch (error) {
-        
-          return error;
+          return error.status(500).send({
+            status: 500,
+            code: -1,
+            message: "fail",
+            version: "1.0.0",
+            error: error,
+            data: {}
+          });
        }
 }
 
@@ -134,14 +170,14 @@ let regUserVoip = async () =>  {
 
 
 
-const createUser = async () => {
+const createUser = async (username: string, password: string, email:string, userID: string) => {
     try {
         // request data object
         const data = {
-            username: 'test3',
-            password: 'start12234',
-            name: '',
-            email: 'test3@example.com'
+            // username: 'test3',
+            // password: 'start12234',
+            // name: '',
+            // email: 'test3@example.com'
         };
 
         // request config that includes `headers`
@@ -152,7 +188,7 @@ const createUser = async () => {
                 'Authorization': 'B8z0WBmnxZRoHRbv'
             }
         };
-        const res = await axios.post('http://open.bnmax.com:9090/plugins/restapi/v1/users', data, config);
+        const res = await axios.post('http://open.bnmax.com:9090/plugins/restapi/v1/users', username,password,email,userID, config);
         return true;
     } catch (err) {
         const error = JSON.stringify(err.name);
@@ -177,7 +213,7 @@ let upDateUserDeviceInfo = {
       userId : any, 
       applicationId: string, 
       applicationVersion: string, 
-      
+      deviceInfo: DeviceInfo,
        ) {
         SQL.connect(SQL_CONFIGURATION)
          .then((pool: any) => {
@@ -188,7 +224,15 @@ let upDateUserDeviceInfo = {
          userId, 
          applicationId, 
          applicationVersion, 
+         deviceInfo
          );
+      }).then((result: any) => {
+        const userUpdated = result.returnValue === '0';
+          if(userUpdated) {
+            return true;
+          }else {
+            return false;
+          }
       })
   }
 }
@@ -226,7 +270,13 @@ let UnBlockUser = {
             .execute('spne_DeleteUserBlockedStateByPhoneNumber', phone);
         })
         .then((result: any) => {
-            return result;
+          const userUpdated = result.returnValue === '0';
+          if(userUpdated) {
+            return true;
+          }else {
+            return false;
+          }
+        
           }).catch((err: any) => {
             return err;
           }) 

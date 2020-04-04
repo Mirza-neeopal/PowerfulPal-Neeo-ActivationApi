@@ -6,7 +6,10 @@ export interface Client {
   AppID: string,
   DTokenVoIP: string,
   Pns: number,
-  DevicePlatform: number,
+  devicePlatform: string,
   DeviceVenderID: number,
+  pass: string,
+  email: string,
+  name: string,
   DeviceToken: number
  }

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction, request } from 'express';
 import { DeviceInfo } from 'models/DeviceInfo.model';
+import { Client } from 'models/Client.model';
 const SQL = require('mssql');
 const SQL_CONFIGURATION = require('../configuration.json');
 
@@ -14,9 +15,16 @@ export class NeeoActivationController {
         try{
             // Params list
             const operationID = request.body.opID;
-            const phoneNumber = request.body.uID;  //UserId is Phone number
+            const phoneNumber = request.body.uID;  //UserId is Phone number       
             const deviceToken = request.body.deviceToken;
-            if(deviceToken) {
+            const client = request.body.client as Client;
+            const appID = client.AppID;
+            const appVer = client.AppVer;
+            const dP = client.devicePlatform;
+            const dVendID = client.DVentId;
+            
+           
+            if(!deviceToken) {
                 if(phoneNumber === '' ){
                     return response.status(400).send({ error: "Enter Full information is  required" });
                 }
@@ -28,8 +36,10 @@ export class NeeoActivationController {
                 }else {
                     internationalPhNo = phoneNumber;
                 }
+
+                // const valPhoneNumber = ValidatePhoneNumber.some(internationalPhNo);
     
-                console.log(internationalPhNo);
+                // console.log(valPhoneNumber + "Valid number");
     
                 if(
                     internationalPhNo === null ||
@@ -40,7 +50,7 @@ export class NeeoActivationController {
                       return response.status(400).send({ error: "Phone Number is invalid" });
                   }else {
 
-
+                    UpdateUserDeviceInfo(internationalPhNo, appID, appVer, dP, dVendID)
                     return response.status(200).send({ success: true });
                   }
                
@@ -65,13 +75,26 @@ export class NeeoActivationController {
 
  let UpdateUserDeviceInfo = async function updateUserDInfo(
        phNo: string,
+       applicationID: string,
        applicationVersion: string,
-       deviceInfo: DeviceInfo
+       devicePlatform: string,
+       deviceVenderID: string
  ){
+     const isTransactional : boolean = false;
+     const insertUpdateAllFields: boolean = false;
      SQL.connect(SQL_CONFIGURATION)
          .then((pool: any) => {
             return pool.request()
             .input('phoneNumber', SQL.VarChar(64), phNo)
+            .input('applicationID', SQL.VarChar(36), applicationID)
+            .input('applicationVersion', SQL.VarChar(36), applicationVersion)
+            .input('deviceVenderID', SQL.VarChar(36), deviceVenderID)
+            .input('devicePlatform', SQL.Int, devicePlatform)
+            .output('userExists', SQL.Int)
+            .execute('dbo.spne_UpdateUserDeviceInfoByPhoneNumber', phNo, applicationID, applicationVersion, devicePlatform, deviceVenderID);
+         })
+         .then((result: any) => {
+             console.log(result);
          })
  }
 
@@ -90,7 +113,7 @@ export class NeeoActivationController {
     }
   };
   
-  var ValidatePhoneNumber = {
+  let ValidatePhoneNumber = {
     some: function(pho: string) {
       try {
         var phoneNumberInfo = phoneUtil.Parse(pho, null);
