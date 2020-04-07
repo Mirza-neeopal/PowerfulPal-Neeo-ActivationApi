@@ -1,75 +1,61 @@
 import { Request, Response, NextFunction, request } from 'express';
-import { DeviceInfo } from 'models/DeviceInfo.model';
 import { Client } from 'models/Client.model';
+import { DeviceInfo } from 'models/DeviceInfo.model';
 const SQL = require('mssql');
 const SQL_CONFIGURATION = require('../configuration.json');
-const axios = require('axios');
 
+const axios = require('axios');
 const phoneUtil = require("google-libphonenumber").PhoneNumberUtil.getInstance();
 
 let deviceInfo : DeviceInfo;
 let isTransactional: boolean;
 let insertUpdateAllFields: boolean;
 
-export class NeeoActivationController {
-    NeeoActivation = async (
-        request: Request, 
-        response: Response,
-        next : NextFunction
+export class CheckAppCompatibilityController {
+    CheckAppCompatibilty = async (
+      request:Request,
+      response: Response,
+      next: NextFunction
     ) => {
-        try{
-            // Params list
-            const operationID = request.body.opID;
-            const phoneNumber = request.body.uID;  //UserId is Phone number       
-            const deviceToken = request.body.deviceToken;  
+        try {
+            const phoneNumber = request.body.uID;  //UserId is Phone number
             const client = request.body.client as Client;
-            const appId = client.AppID;
             const appVer = client.AppVer;
-            const pass = request.body.password; /// It will be generated??
+            const osVer = client.OsVer;
+            const dM = client.DM;
+            const appId = client.AppID;
 
-                if(phoneNumber === '' ){
-                    return response.status(400).send({ error: "Enter Full information is  required" });
-                }
-                let internationalPhNo = "";
-    
-                let checkInter = IsPhoneNumberInInternationalFormat.some(phoneNumber);
-                if(!checkInter) {
-                  internationalPhNo = '+' + phoneNumber;
-                }else {
-                    internationalPhNo = phoneNumber;
-                }
-    
-                if(
-                    internationalPhNo === null ||
-                    internationalPhNo === "" ||
-                    internationalPhNo === undefined ||
-                    !internationalPhNo
-                  ) {
-                      return response.status(400).send({ error: "Phone Number is invalid" });
-                  }else {
-                    const upDateDeviceInfo = upDateUserDeviceInfo.updateInfo(internationalPhNo, appId
-                       ,appVer, deviceInfo, isTransactional, insertUpdateAllFields);
-                    const registerUserVoip = regUserVoip(internationalPhNo, pass);
-                      return response.status(200).send({
-                        status: 200,
-                        code: 1,
-                        message: "success",
-                        version: "1.0.0",
-                        data: { returnValue: true}
-                      }); 
+            if(phoneNumber === '' ){
+                return response.status(400).send({ error: "Enter Full information is  required" });
             }
+            let internationalPhNo = "";
+
+            let checkInter = IsPhoneNumberInInternationalFormat.some(phoneNumber);
+            if(!checkInter) {
+              internationalPhNo = '+' + phoneNumber;
+            }else {
+                internationalPhNo = phoneNumber;
+            }
+
+            if(
+                internationalPhNo === null ||
+                internationalPhNo === "" ||
+                internationalPhNo === undefined ||
+                !internationalPhNo
+              ) {
+                  return response.status(400).send({ error: "Phone Number is invalid" });
+              }else {
+                const upDateDeviceInfo = upDateUserDeviceInfo.updateInfo(internationalPhNo, appId
+                  ,appVer, deviceInfo, isTransactional, insertUpdateAllFields);
+              }
         }
-        catch(error) {
-          return response.status(500).send({
-            status: 500,
-            code: -1,
-            message: "fail to update user",
-            version: "1.0.0",
-            data: {}
-          });
+        catch {
+
         }
     }
 }
+
+
 
 /**
  * Update device Info.
@@ -122,7 +108,6 @@ let upDateUserDeviceInfo = {
   }
 }
 
-
 /**
  * Register User to voip Server.
  
@@ -130,58 +115,57 @@ let upDateUserDeviceInfo = {
  */
 
 let regUserVoip = async (mob: string, pass: string) =>  {
-  try {
-    const params = {
-      mode: 'add',
-      PushEnabled: 'NotSpecified',
-      UserStatus: 'NotSpecified'
-      // mob: '123455677',
-      // pass: '12345',
-
-    };
-    const config = {
-      headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'Axios',
-          'key': 'voipSecretKey',
-          'value': '12345'
-      }
-    };
-    const res = await axios.post('http://rtsip.neeopal.com/NeoWeb/register.php', params, config, mob, pass);
-      if(res) {
-        return res.status(200).send({
-          status: 200,
-          code: 1,
-          message: "user success updated",
-          version: "1.0.0",
-          data: { returnValue: true}
-        });
-      }else {
-        return res.status(500).send({
-          status: 500,
-          code: -1,
-          message: "fail to update user",
-          version: "1.0.0",
-          data: {}
-        });
-
-      }
-     }catch (error) {
-        return error.status(500).send({
-          status: 500,
-          code: -1,
-          message: "fail",
-          version: "1.0.0",
-          error: error,
-          data: {}
-        });
-     }
-}
-
-
+    try {
+      const params = {
+        mode: 'add',
+        PushEnabled: 'NotSpecified',
+        UserStatus: 'NotSpecified'
+        // mob: '123455677',
+        // pass: '12345',
+  
+      };
+      const config = {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'Axios',
+            'key': 'voipSecretKey',
+            'value': '12345'
+        }
+      };
+      const res = await axios.post('http://rtsip.neeopal.com/NeoWeb/register.php', params, config, mob, pass);
+        if(res) {
+          return res.status(200).send({
+            status: 200,
+            code: 1,
+            message: "user success updated",
+            version: "1.0.0",
+            data: { returnValue: true}
+          });
+        }else {
+          return res.status(500).send({
+            status: 500,
+            code: -1,
+            message: "fail to update user",
+            version: "1.0.0",
+            data: {}
+          });
+  
+        }
+       }catch (error) {
+          return error.status(500).send({
+            status: 500,
+            code: -1,
+            message: "fail",
+            version: "1.0.0",
+            error: error,
+            data: {}
+          });
+       }
+  }
 
 
- var IsPhoneNumberInInternationalFormat = {
+
+  var IsPhoneNumberInInternationalFormat = {
     some: function(phone: string) {
       let internationalNumberPrefix = ["00", "+"];
       if (phone.length >= 2) {

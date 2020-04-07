@@ -6,7 +6,7 @@ export interface DeviceInfo {
     DeviceTokenVoip: string
   }
 
-  enum DevicePlatform {
+  export enum DevicePlatform {
    iOS = 1,
    Android = 2,
    WindowsMobile = 3
@@ -14,7 +14,7 @@ export interface DeviceInfo {
    //Mac = 5
  }
 
- enum PushNotificationSource {
+ export enum PushNotificationSource {
     Default = 1,
     Pushy = 2
  }
