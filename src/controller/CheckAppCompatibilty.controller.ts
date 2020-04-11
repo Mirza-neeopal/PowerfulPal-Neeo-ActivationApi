@@ -10,6 +10,7 @@ const phoneUtil = require("google-libphonenumber").PhoneNumberUtil.getInstance()
 let deviceInfo : DeviceInfo;
 let isTransactional: boolean;
 let insertUpdateAllFields: boolean;
+let pass : any;
 
 export class CheckAppCompatibilityController {
     CheckAppCompatibilty = async (
@@ -20,12 +21,18 @@ export class CheckAppCompatibilityController {
         try {
             const phoneNumber = request.body.uID;  //UserId is Phone number
             const client = request.body.client as Client;
-            const appVer = client.AppVer;
-            const osVer = client.OsVer;
-            const dM = client.DM;
-            const appId = client.AppID;
+            const deviceInfo = request.body.DeviceInfo as DeviceInfo;
+            const devicePlateForm = deviceInfo.DevicePlateform;
+            const dVenderID = deviceInfo.DeviceVenderId;
+            const AppVer = client.AppVer;
+            const AppId = client.AppID;
+            const deviceToken = deviceInfo.DeviceToken;
+            const deviceTokenVoIP = deviceInfo.DeviceTokenVoip;
+            const deviceModel = deviceInfo.DeviceModel;
+            const osVersion = deviceInfo.OsVersion;
+            const pnSource = deviceInfo.PushNotificationSource;
 
-            if(phoneNumber === '' ){
+            if(phoneNumber === ''){
                 return response.status(400).send({ error: "Enter Full information is  required" });
             }
             let internationalPhNo = "";
@@ -45,8 +52,19 @@ export class CheckAppCompatibilityController {
               ) {
                   return response.status(400).send({ error: "Phone Number is invalid" });
               }else {
-                const upDateDeviceInfo = upDateUserDeviceInfo.updateInfo(internationalPhNo, appId
-                  ,appVer, deviceInfo, isTransactional, insertUpdateAllFields);
+                if(internationalPhNo === '' && devicePlateForm === '' && dVenderID && '' ) {
+                  return response.status(500).send({
+                    status: 500,
+                    code: -1,
+                    message: "fail to update user",
+                    version: "1.0.0",
+                    data: {}
+                  });
+                }else {
+                  const upDatedDeviceTokenInfo = upDateUserDeviceInfo.updateInfo(internationalPhNo, devicePlateForm, dVenderID, AppId??"", deviceToken??"",
+                  deviceTokenVoIP??"", AppVer??"", deviceModel??"", osVersion??"", pnSource, isTransactional, insertUpdateAllFields);
+                  const registerUserOnVoip =   regUserVoip(internationalPhNo, pass);
+                } 
               }
         }
         catch {
@@ -67,11 +85,17 @@ export class CheckAppCompatibilityController {
 let upDateUserDeviceInfo = {
   updateInfo: function(
       userId : any, 
+      devicePlatform: string,
+      deviceVenderId: string,
       applicationId: string, 
+      deviceToken: string,
+      deviceTokenVoIP: string,
       applicationVersion: string, 
-      deviceInfo: DeviceInfo,
+      deviceModel: string,
+      osVersion: string,
+      pnSource: number,
       isTransactional: boolean,
-      insertUpdateAllFields: boolean
+      insertUpdateAllColumns: boolean
        ) {
         if(!isTransactional) {
           return 
@@ -82,16 +106,29 @@ let upDateUserDeviceInfo = {
            return pool
           .request()
           .input('userId', SQL.VarChar(64), userId)
+          .input('devicePlatform', SQL.VarChar(64), devicePlatform)
+          .input('deviceVenderId', SQL.VarChar(64), deviceVenderId)
           .input('applicationId', SQL.VarChar(64), applicationId)
+          .input('deviceToken', SQL.VarChar(64), deviceToken)
+          .input('deviceTokenVoIP', SQL.VarChar(64), deviceTokenVoIP)
           .input('applicationVersion', SQL.VarChar(64), applicationVersion)
+          .input('deviceModel', SQL.VarChar(64), deviceModel)
+          .input('osVersion', SQL.VarChar(64), osVersion)
+          .input('pnSource', SQL.VarChar(64), pnSource)
           .input('isTransactiona', SQL.boolean, isTransactional)
-          .input('insertUpdateAllFields', SQL.boolean, insertUpdateAllFields)
+          .input('insertUpdateAllFields', SQL.boolean, insertUpdateAllColumns)
           .output('result', SQL.boolean)
           .execute('spne_UpdateUserDeviceInfoByPhoneNumber', 
           userId, 
+          devicePlatform,
+          deviceVenderId,
           applicationId, 
+          deviceToken,
+          deviceTokenVoIP,
           applicationVersion, 
-          deviceInfo
+          deviceModel,
+          osVersion,
+          pnSource
           );
        }).then((result: any) => {
          const userUpdated = result === '1';
@@ -103,8 +140,6 @@ let upDateUserDeviceInfo = {
        })
 
         }
-        
-     
   }
 }
 

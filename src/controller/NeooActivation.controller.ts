@@ -19,16 +19,25 @@ export class NeeoActivationController {
     ) => {
         try{
             // Params list
-            const operationID = request.body.opID;
-            const phoneNumber = request.body.uID;  //UserId is Phone number       
-            const deviceToken = request.body.deviceToken;  
-            const client = request.body.client as Client;
-            const appId = client.AppID;
-            const appVer = client.AppVer;
-            const pass = request.body.password; /// It will be generated??
+             const operationID = request.body.opID;
+             const phoneNumber = request.body.uID;  //UserId is Phone number  
+             const dToken = request.body.deviceToken;     
+        
+             const client = request.body.client as Client;
+             const deviceInfo = request.body.DeviceInfo as DeviceInfo;
+             const devicePlateForm = deviceInfo.DevicePlateform;
+             const dVenderID = deviceInfo.DeviceVenderId;
+             const AppVer = client.AppVer;
+             const AppId = client.AppID;
+             const deviceToken = deviceInfo.DeviceToken;
+             const deviceTokenVoIP = deviceInfo.DeviceTokenVoip;
+             const deviceModel = deviceInfo.DeviceModel;
+             const osVersion = deviceInfo.OsVersion;
+             const pnSource = deviceInfo.PushNotificationSource;
+             const pass = request.body.password; /// It will be generated??
 
-                if(phoneNumber === '' ){
-                    return response.status(400).send({ error: "Enter Full information is  required" });
+                if(phoneNumber === '' && client === null){
+                    return response.status(400).send({ error: "some params are missing" });
                 }
                 let internationalPhNo = "";
     
@@ -47,16 +56,38 @@ export class NeeoActivationController {
                   ) {
                       return response.status(400).send({ error: "Phone Number is invalid" });
                   }else {
-                    const upDateDeviceInfo = upDateUserDeviceInfo.updateInfo(internationalPhNo, appId
-                       ,appVer, deviceInfo, isTransactional, insertUpdateAllFields);
-                    const registerUserVoip = regUserVoip(internationalPhNo, pass);
-                      return response.status(200).send({
-                        status: 200,
-                        code: 1,
-                        message: "success",
+                    let newDeviceToken: any = '';
+                    if(internationalPhNo === '' && devicePlateForm === '' && dVenderID && '' ) {
+                      return response.status(500).send({
+                        status: 500,
+                        code: -1,
+                        message: "fail to update user",
                         version: "1.0.0",
-                        data: { returnValue: true}
-                      }); 
+                        data: {}
+                      });
+                    }else {
+                      const upDatedDeviceTokenInfo = upDateUserDeviceInfo.updateInfo(internationalPhNo, devicePlateForm, dVenderID, AppId??"", deviceToken??"",
+                      deviceTokenVoIP??"", AppVer??"", deviceModel??"", osVersion??"", pnSource, isTransactional, insertUpdateAllFields);
+                      const registerUserVoip = regUserVoip(internationalPhNo, pass);
+
+                      if(upDatedDeviceTokenInfo != null && registerUserVoip) {
+                        return response.status(200).send({
+                          status: 200,
+                          code: 1,
+                          message: "success",
+                          version: "1.0.0",
+                          data: { returnValue: true}
+                        });
+                      }else {
+                        return response.status(500).send({
+                          status: 500,
+                          code: -1,
+                          message: "fail to update user",
+                          version: "1.0.0",
+                          data: {}
+                        });
+                      } 
+                    }          
             }
         }
         catch(error) {
@@ -81,11 +112,17 @@ export class NeeoActivationController {
 let upDateUserDeviceInfo = {
   updateInfo: function(
       userId : any, 
+      devicePlatform: string,
+      deviceVenderId: string,
       applicationId: string, 
+      deviceToken: string,
+      deviceTokenVoIP: string,
       applicationVersion: string, 
-      deviceInfo: DeviceInfo,
+      deviceModel: string,
+      osVersion: string,
+      pnSource: number,
       isTransactional: boolean,
-      insertUpdateAllFields: boolean
+      insertUpdateAllColumns: boolean
        ) {
         if(!isTransactional) {
           return 
@@ -96,16 +133,29 @@ let upDateUserDeviceInfo = {
            return pool
           .request()
           .input('userId', SQL.VarChar(64), userId)
+          .input('devicePlatform', SQL.VarChar(64), devicePlatform)
+          .input('deviceVenderId', SQL.VarChar(64), deviceVenderId)
           .input('applicationId', SQL.VarChar(64), applicationId)
+          .input('deviceToken', SQL.VarChar(64), deviceToken)
+          .input('deviceTokenVoIP', SQL.VarChar(64), deviceTokenVoIP)
           .input('applicationVersion', SQL.VarChar(64), applicationVersion)
+          .input('deviceModel', SQL.VarChar(64), deviceModel)
+          .input('osVersion', SQL.VarChar(64), osVersion)
+          .input('pnSource', SQL.VarChar(64), pnSource)
           .input('isTransactiona', SQL.boolean, isTransactional)
-          .input('insertUpdateAllFields', SQL.boolean, insertUpdateAllFields)
+          .input('insertUpdateAllFields', SQL.boolean, insertUpdateAllColumns)
           .output('result', SQL.boolean)
           .execute('spne_UpdateUserDeviceInfoByPhoneNumber', 
           userId, 
+          devicePlatform,
+          deviceVenderId,
           applicationId, 
+          deviceToken,
+          deviceTokenVoIP,
           applicationVersion, 
-          deviceInfo
+          deviceModel,
+          osVersion,
+          pnSource
           );
        }).then((result: any) => {
          const userUpdated = result === '1';
@@ -117,10 +167,9 @@ let upDateUserDeviceInfo = {
        })
 
         }
-        
-     
   }
 }
+
 
 
 /**
